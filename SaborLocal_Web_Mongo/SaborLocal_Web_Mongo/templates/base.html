@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SaborLocal{% endblock %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { 
+                sans: ['Inter', 'sans-serif'],
+                serif: ['Playfair Display', 'serif'] 
+            },
+            colors: {
+              dorado: {
+                DEFAULT: '#D4AF37', // Dorado metálico clásico
+                brillante: '#F3E5AB', // Dorado claro
+                oscuro: '#AA8529' // Dorado sombreado
+              },
+              plateado: {
+                DEFAULT: '#C0C0C0', // Plateado
+                claro: '#E5E4E2', // Platino
+                oscuro: '#808080' // Gris metálico
+              },
+              fondo: {
+                puro: '#000000', // Negro absoluto
+                tarjeta: '#121212', // Negro elevado (Material Design)
+                borde: '#2A2A2A' // Gris muy oscuro para divisiones
+              }
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-fondo-puro text-plateado-claro font-sans antialiased min-h-screen flex flex-col">
+
+    <nav class="bg-fondo-puro border-b border-fondo-borde sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/" class="text-2xl font-serif text-plateado-claro flex items-center gap-2 tracking-widest uppercase">
+                        <span class="text-dorado font-bold">Sabor</span>Local
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    {% if usuario %}
+                        <div class="flex items-center space-x-6">
+                            {% if usuario.rol == 'CLIENTE' %}
+                                <a href="{{ url_for('panel_cliente') }}" class="text-plateado hover:text-dorado text-sm tracking-widest uppercase transition-colors">Explorar</a>
+                                <a href="{{ url_for('carrito_ver') }}" class="text-plateado hover:text-dorado text-sm tracking-widest uppercase transition-colors">Carrito</a>
+                                <a href="{{ url_for('cliente_pedidos') }}" class="text-plateado hover:text-dorado text-sm tracking-widest uppercase transition-colors">Mis pedidos</a>
+                            {% elif usuario.rol == 'CHEF' %}
+                                <a href="{{ url_for('panel_chef') }}" class="text-plateado hover:text-dorado text-sm tracking-widest uppercase transition-colors">Pedidos</a>
+                                <a href="{{ url_for('chef_menu') }}" class="text-plateado hover:text-dorado text-sm tracking-widest uppercase transition-colors">Mi menú</a>
+                            {% endif %}
+                            
+                            <div class="h-5 w-px bg-fondo-borde mx-2"></div>
+                            
+                            <span class="text-xs font-serif text-fondo-puro bg-dorado px-3 py-1.5 rounded uppercase tracking-widest font-bold">
+                                {{ usuario.nombre or usuario.correo }}
+                            </span>
+                            <a href="{{ url_for('logout') }}" class="text-sm tracking-widest uppercase text-plateado-oscuro hover:text-red-500 transition-colors">Salir</a>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="bg-transparent border border-dorado text-dorado hover:bg-dorado hover:text-fondo-puro px-6 py-2 rounded font-serif uppercase tracking-widest text-xs transition-all">
+                            Ingresar
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div class="mb-8 space-y-3">
+                    {% for categoria, mensaje in mensajes %}
+                        <div class="p-4 rounded border bg-fondo-tarjeta text-sm font-light flex items-center shadow-lg
+                            {% if categoria == 'success' %}border-green-800 text-green-400
+                            {% elif categoria == 'danger' or categoria == 'error' %}border-red-800 text-red-400
+                            {% else %}border-dorado text-dorado-brillante{% endif %}" role="alert">
+                            {{ mensaje }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="w-full">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="bg-fondo-puro border-t border-fondo-borde mt-auto">
+        <div class="max-w-6xl mx-auto px-4 py-8 text-center text-xs text-plateado-oscuro font-serif tracking-widest uppercase">
+            &copy; 2026 SaborLocal. La excelencia en cada detalle.
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Panel Chef — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Encabezado del Panel Chef -->
+<div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-fondo-borde pb-6">
+    <div>
+        <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Gestión Culinaria</span>
+        <h1 class="text-3xl md:text-4xl font-serif text-dorado uppercase tracking-wide">Pedidos del Establecimiento</h1>
+    </div>
+    
+    {% if restaurante %}
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('chef_menu') }}" class="border border-dorado text-dorado hover:bg-dorado hover:text-fondo-puro font-serif uppercase tracking-widest text-xs px-5 py-2.5 rounded transition-colors shadow-lg">
+                Gestionar Menú
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% if not restaurante %}
+    <!-- Estado: Sin restaurante asociado -->
+    <div class="text-center py-20 bg-fondo-tarjeta border border-fondo-borde rounded-lg shadow-2xl">
+        <span class="text-4xl mb-4 block text-dorado-oscuro">👨‍🍳</span>
+        <p class="text-plateado-oscuro font-light tracking-widest uppercase text-sm mb-2">
+            No tiene un restaurante asociado a su cuenta.
+        </p>
+    </div>
+
+{% elif restaurante.estado != 'PUBLICADO' %}
+    <!-- Estado: Restaurante no publicado -->
+    <div class="bg-fondo-tarjeta border border-dorado/40 rounded-lg p-8 shadow-2xl text-center max-w-2xl mx-auto my-8">
+        <span class="text-4xl mb-4 block text-dorado">📢</span>
+        <h2 class="text-xl font-serif text-plateado-claro tracking-wide mb-3">Su restaurante aún no se encuentra publicado</h2>
+        <p class="text-sm font-light text-plateado leading-relaxed mb-6">
+            Configure la propuesta gastronómica, organice sus platillos y publique la carta para comenzar a recibir órdenes de los clientes.
+        </p>
+        <a href="{{ url_for('chef_menu') }}" class="inline-block bg-dorado hover:bg-dorado-brillante text-fondo-puro font-serif font-bold uppercase tracking-widest text-xs px-8 py-3.5 rounded transition-colors shadow-xl">
+            Configurar menú y publicar
+        </a>
+    </div>
+
+{% elif not pedidos %}
+    <!-- Estado: Sin pedidos -->
+    <div class="text-center py-20 bg-fondo-tarjeta border border-fondo-borde rounded-lg shadow-2xl">
+        <span class="text-4xl mb-4 block text-dorado-oscuro">🛎️</span>
+        <p class="text-plateado-oscuro font-light tracking-widest uppercase text-sm">
+            Aún no ha recibido órdenes para su cocina.
+        </p>
+    </div>
+
+{% else %}
+    <!-- Lista de Pedidos -->
+    <div class="space-y-6 max-w-4xl mx-auto">
+        {% for p in pedidos %}
+        {% set legible = estados_legibles.get(p.estado, (p.estado, 'secondary')) %}
+        
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 shadow-xl hover:border-dorado/30 transition-all">
+            
+            <!-- Encabezado de la comanda -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-fondo-borde mb-4">
+                <div>
+                    <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-0.5">Comanda de Cocina</span>
+                    <h3 class="text-xl font-serif text-plateado-claro tracking-wide">Pedido #{{ p.id }}</h3>
+                </div>
+                
+                <!-- Badge de Estado -->
+                <div>
+                    {% if legible[1] == 'success' %}
+                        <span class="px-3 py-1 bg-green-950 border border-green-800 text-green-400 text-[10px] uppercase tracking-widest rounded-sm font-bold">
+                            {{ legible[0] }}
+                        </span>
+                    {% elif legible[1] == 'danger' %}
+                        <span class="px-3 py-1 bg-red-950 border border-red-800 text-red-400 text-[10px] uppercase tracking-widest rounded-sm font-bold">
+                            {{ legible[0] }}
+                        </span>
+                    {% elif legible[1] == 'warning' %}
+                        <span class="px-3 py-1 bg-amber-950 border border-amber-700 text-amber-300 text-[10px] uppercase tracking-widest rounded-sm font-bold">
+                            {{ legible[0] }}
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-fondo-puro border border-fondo-borde text-plateado text-[10px] uppercase tracking-widest rounded-sm font-bold">
+                            {{ legible[0] }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Desglose de Platillos Solicitados -->
+            <div class="space-y-2 mb-5 bg-fondo-puro border border-fondo-borde p-4 rounded shadow-inner">
+                <span class="text-[10px] font-serif uppercase tracking-widest text-plateado-oscuro block mb-2">Platillos solicitados</span>
+                {% for d in detalles.get(p.id, []) %}
+                <div class="flex justify-between items-center text-sm font-light">
+                    <span class="text-plateado-claro"><span class="text-dorado font-bold font-serif">{{ d.cantidad }}x</span> {{ d.nombre }}</span>
+                    <span class="text-plateado-oscuro font-mono text-xs">${{ '%.0f'|format(d.subtotal) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Información General del Pedido -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-1">
+                <div>
+                    <p class="text-sm font-light text-plateado">
+                        Total de la comanda: <span class="text-dorado font-serif font-bold text-base">${{ '%.0f'|format(p.monto_total) }}</span>
+                    </p>
+                    <p class="text-[11px] text-plateado-oscuro uppercase tracking-widest mt-0.5">
+                        Entrega: <span class="text-plateado">{{ 'Domicilio' if p.tipo_entrega == 'DOMICILIO' else 'Recoger en el local' }}</span>
+                        {% if p.direccion_entrega %} &mdash; <span class="text-plateado-claro">{{ p.direccion_entrega }}</span>{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Panel de Controles y Transiciones para el Chef -->
+            <div class="pt-4 border-t border-fondo-borde/60 flex flex-wrap items-center gap-3">
+                
+                {% if p.estado == 'PENDIENTE_CHEF' and not aceptados.get(p.id) %}
+                    <form method="post" action="{{ url_for('chef_aceptar', pedido_id=p.id) }}">
+                        <button type="submit" class="bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 font-serif uppercase tracking-widest text-[11px] px-5 py-2.5 rounded transition-colors font-bold shadow">
+                            Aceptar Orden
+                        </button>
+                    </form>
+                    
+                    <form method="post" action="{{ url_for('chef_rechazar', pedido_id=p.id) }}" class="flex items-center gap-2">
+                        <input type="text" name="motivo" placeholder="Motivo (opcional)" 
+                               class="bg-fondo-puro border border-fondo-borde text-plateado-claro text-xs rounded px-3 py-2 focus:ring-1 focus:ring-dorado outline-none placeholder-plateado-oscuro font-light w-44">
+                        <button type="submit" class="border border-red-900/50 text-red-400 hover:bg-red-950 font-serif uppercase tracking-widest text-[11px] px-4 py-2 rounded transition-colors font-bold">
+                            Rechazar
+                        </button>
+                    </form>
+                
+                {% elif p.estado == 'PENDIENTE_CHEF' and aceptados.get(p.id) %}
+                    <span class="text-xs text-plateado-oscuro font-light italic flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-dorado animate-pulse"></span>
+                        Orden aceptada &mdash; Esperando confirmación de pago por el cliente
+                    </span>
+                {% endif %}
+
+                {% if p.estado == 'PAGADO' %}
+                    <form method="post" action="{{ url_for('chef_preparar', pedido_id=p.id) }}">
+                        <button type="submit" class="bg-dorado hover:bg-dorado-brillante text-fondo-puro font-serif font-bold uppercase tracking-widest text-xs px-6 py-2.5 rounded transition-colors shadow-lg">
+                            Iniciar Preparación
+                        </button>
+                    </form>
+                {% endif %}
+
+                {% if p.estado == 'EN_PREPARACION' %}
+                    <form method="post" action="{{ url_for('chef_despachar', pedido_id=p.id) }}">
+                        <button type="submit" class="bg-amber-950 hover:bg-amber-900 border border-amber-700 text-amber-300 font-serif uppercase tracking-widest text-[11px] px-6 py-2.5 rounded transition-colors font-bold shadow">
+                            {{ 'Despachar Orden' if p.tipo_entrega == 'DOMICILIO' else 'Marcar Listo para Recoger' }}
+                        </button>
+                    </form>
+                {% endif %}
+
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

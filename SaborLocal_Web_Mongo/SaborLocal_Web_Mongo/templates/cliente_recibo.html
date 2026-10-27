@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Recibo — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Encabezado del Recibo -->
+<div class="mb-10 text-center max-w-2xl mx-auto">
+    <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Comprobante Oficial</span>
+    <h1 class="text-3xl md:text-4xl font-serif text-dorado uppercase tracking-wide mb-2">Recibo de Orden #{{ pedido_id }}</h1>
+    <p class="text-plateado text-sm font-light border-b border-fondo-borde pb-6">
+        Detalle de la transacción realizada en SaborLocal.
+    </p>
+</div>
+
+<div class="max-w-2xl mx-auto">
+    {% if recibo %}
+        <!-- Tarjeta Estilo Comanda / Ticket de Alta Cocina -->
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 md:p-8 shadow-2xl mb-8 relative overflow-hidden">
+            
+            <!-- Detalle Decorativo Superior Metálico -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-dorado-oscuro via-dorado to-dorado-brillante"></div>
+
+            <!-- Contenedor del Recibo Formateado -->
+            <div class="bg-fondo-puro border border-fondo-borde p-6 rounded font-mono text-xs text-plateado-claro leading-relaxed whitespace-pre-wrap overflow-x-auto shadow-inner">
+{{ recibo }}
+            </div>
+
+            <!-- Sello Digital de Autenticidad -->
+            <div class="mt-6 pt-4 border-t border-fondo-borde/60 flex items-center justify-between text-[10px] text-plateado-oscuro uppercase tracking-widest font-serif">
+                <span>Estado: <span class="text-green-400 font-bold">Aprobado</span></span>
+                <span>SaborLocal &copy; 2026</span>
+            </div>
+        </div>
+    {% else %}
+        <!-- Estado Vacío / Pendiente -->
+        <div class="text-center py-16 bg-fondo-tarjeta border border-fondo-borde rounded-lg shadow-2xl mb-8">
+            <span class="text-4xl mb-4 block text-dorado-oscuro">⏳</span>
+            <p class="text-plateado-oscuro font-light tracking-widest uppercase text-sm max-w-md mx-auto">
+                Aún no hay recibo disponible para este pedido (el pago no se ha completado o no ha sido aprobado todavía).
+            </p>
+        </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    <div class="text-center">
+        <a href="{{ url_for('cliente_pedidos') }}" 
+           class="inline-block border border-dorado text-dorado hover:bg-dorado hover:text-fondo-puro font-serif uppercase tracking-widest text-xs px-8 py-3 rounded transition-colors shadow-lg">
+            &larr; Volver a mis pedidos
+        </a>
+    </div>
+</div>
+{% endblock %}

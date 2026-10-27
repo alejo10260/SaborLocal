@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Editar platillo — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Navegación y Encabezado -->
+<div class="mb-10 max-w-lg mx-auto">
+    <a href="{{ url_for('chef_menu') }}" class="inline-flex items-center text-xs font-serif uppercase tracking-widest text-plateado hover:text-dorado transition-colors mb-6">
+        <span class="mr-2 text-lg leading-none">&larr;</span> Volver a mi menú
+    </a>
+    
+    <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Gestión de Carta</span>
+    <h1 class="text-3xl font-serif text-dorado uppercase tracking-wide mb-2">Editar Platillo</h1>
+    <p class="text-plateado text-sm font-light border-b border-fondo-borde pb-6">
+        Modifique la información, precio o inventario disponible para este plato.
+    </p>
+</div>
+
+<!-- Tarjeta de Edición -->
+<div class="max-w-lg mx-auto">
+    <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 md:p-8 shadow-2xl">
+        <form method="post" class="space-y-5">
+            <div>
+                <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Nombre del platillo</label>
+                <input type="text" name="nombre" value="{{ producto.nombre }}" required 
+                       class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none transition-all text-plateado-claro text-sm font-light">
+            </div>
+
+            <div>
+                <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Descripción</label>
+                <textarea name="descripcion" rows="3" 
+                          class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none transition-all text-plateado-claro text-sm font-light resize-none">{{ producto.descripcion or '' }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Precio ($)</label>
+                    <input type="number" name="precio" value="{{ producto.precio }}" min="1" step="1" required 
+                           class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none transition-all text-plateado-claro text-sm font-light">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Stock disponible</label>
+                    <input type="number" name="inventario" value="{{ producto.inventario }}" min="0" step="1" required 
+                           class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none transition-all text-plateado-claro text-sm font-light">
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-fondo-borde flex items-center justify-end gap-3">
+                <a href="{{ url_for('chef_menu') }}" class="border border-plateado-oscuro text-plateado hover:border-dorado hover:text-dorado font-serif uppercase tracking-widest text-xs px-5 py-3 rounded transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-dorado hover:bg-dorado-brillante text-fondo-puro font-serif font-bold uppercase tracking-widest text-xs px-6 py-3 rounded transition-colors shadow-lg">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+flask
+pymongo
+bcrypt
+# Solo para demo/pruebas sin servidor MongoDB (SABORLOCAL_MOCK=1):
+mongomock

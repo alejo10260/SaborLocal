@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Menú — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Navegación y Encabezado del Restaurante -->
+<div class="mb-10">
+    <a href="{{ url_for('panel_cliente') }}" class="inline-flex items-center text-xs font-serif uppercase tracking-widest text-plateado hover:text-dorado transition-colors mb-6">
+        <span class="mr-2 text-lg leading-none">&larr;</span> Regresar a la selección
+    </a>
+    
+    <h1 class="text-3xl md:text-4xl font-serif text-dorado tracking-wide mb-2">
+        {{ restaurante.nombre_restaurante if restaurante else 'Menú Exclusivo' }}
+    </h1>
+    <p class="text-plateado text-sm font-light border-b border-fondo-borde pb-6 flex items-center gap-2">
+        <span class="text-dorado">📍</span> {{ restaurante.direccion if restaurante else '' }}
+    </p>
+</div>
+
+<!-- Estado Vacío -->
+{% if not productos %}
+    <div class="text-center py-20 bg-fondo-tarjeta border border-fondo-borde rounded shadow-2xl">
+        <span class="text-4xl mb-4 block text-dorado-oscuro">🍷</span>
+        <p class="text-plateado-oscuro font-light tracking-widest uppercase text-sm">
+            Este restaurante no tiene platillos activos por el momento.
+        </p>
+    </div>
+{% else %}
+    <!-- Cuadrícula del Menú -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for p in productos %}
+        {% set en_cart = en_carrito.get(p.id, 0) %}
+        {% set quedan = p.inventario - en_cart %}
+        
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded p-6 shadow-xl hover:shadow-2xl hover:border-dorado/40 transition-all flex flex-col h-full">
+            
+            <!-- Detalles del Platillo -->
+            <div class="flex-grow">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="text-lg font-serif text-plateado-claro tracking-wide leading-tight pr-4">{{ p.nombre }}</h3>
+                    <span class="text-dorado font-bold text-lg">${{ '%.0f'|format(p.precio) }}</span>
+                </div>
+                
+                <p class="text-sm font-light text-plateado leading-relaxed mb-5">
+                    {{ p.descripcion or 'Una delicia preparada con los mejores ingredientes locales.' }}
+                </p>
+                
+                <!-- Indicadores de Inventario y Carrito -->
+                <div class="mb-5 flex flex-col gap-1.5">
+                    {% if p.inventario <= 0 %}
+                        <span class="inline-block w-max px-2 py-0.5 bg-red-950 border border-red-900 text-red-400 text-[9px] uppercase tracking-widest rounded-sm font-bold">Agotado</span>
+                    {% else %}
+                        <span class="text-[10px] text-plateado-oscuro uppercase tracking-widest flex items-center gap-1">
+                            Disponibles: <span class="text-plateado font-medium">{{ p.inventario }}</span>
+                        </span>
+                    {% endif %}
+                    
+                    {% if en_cart %}
+                        <span class="text-[10px] text-dorado-oscuro uppercase tracking-widest flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-dorado"></span> En su orden: {{ en_cart }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Controles de Compra -->
+            <div class="pt-5 border-t border-fondo-borde">
+                {% if quedan > 0 %}
+                    <form method="post" action="{{ url_for('carrito_agregar') }}" class="flex items-center gap-3">
+                        <input type="hidden" name="restaurante_id" value="{{ restaurante_id }}">
+                        <input type="hidden" name="producto_id" value="{{ p.id }}">
+                        
+                        <!-- Input de cantidad estilizado -->
+                        <div class="w-20 shrink-0">
+                            <input type="number" name="cantidad" value="1" min="1" max="{{ quedan }}" 
+                                   class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-center font-light text-sm transition-all shadow-inner">
+                        </div>
+                        
+                        <!-- Botón de añadir -->
+                        <button type="submit" class="flex-grow bg-transparent border border-dorado text-dorado hover:bg-dorado hover:text-fondo-puro font-serif uppercase tracking-widest text-[11px] py-2.5 rounded transition-colors text-center font-bold">
+                            Añadir
+                        </button>
+                    </form>
+                {% elif p.inventario > 0 %}
+                    <button type="button" disabled class="w-full bg-fondo-puro border border-fondo-borde text-plateado-oscuro font-serif uppercase tracking-widest text-[11px] py-2.5 rounded cursor-not-allowed">
+                        Límite alcanzado
+                    </button>
+                {% else %}
+                    <button type="button" disabled class="w-full bg-fondo-puro border border-red-900/30 text-red-900/50 font-serif uppercase tracking-widest text-[11px] py-2.5 rounded cursor-not-allowed">
+                        Sin existencias
+                    </button>
+                {% endif %}
+            </div>
+            
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

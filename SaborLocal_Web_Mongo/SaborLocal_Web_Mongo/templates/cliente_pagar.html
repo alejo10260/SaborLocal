@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Pagar pedido — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Encabezado del Checkout -->
+<div class="mb-10">
+    <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Pasarela Segura</span>
+    <h1 class="text-3xl md:text-4xl font-serif text-dorado uppercase tracking-wide mb-2">Pago de Orden #{{ pedido.id }}</h1>
+    <p class="text-plateado text-sm font-light border-b border-fondo-borde pb-6">
+        Finalice su transacción de manera segura para que el establecimiento comience la preparación.
+    </p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Columna Izquierda: Resumen de la Cuenta -->
+    <div class="lg:col-span-1">
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded p-6 shadow-2xl sticky top-28">
+            <h3 class="text-[11px] font-serif uppercase tracking-widest text-dorado mb-4 border-b border-fondo-borde pb-3">
+                Detalle del Consumo
+            </h3>
+            
+            <div class="space-y-3 mb-6">
+                {% for d in detalles %}
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-plateado font-light">
+                        <span class="text-dorado font-medium">{{ d.cantidad }}x</span> {{ d.nombre }}
+                    </span>
+                    <span class="text-plateado-claro font-serif font-medium">${{ '%.0f'|format(d.subtotal) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="border-t border-fondo-borde pt-4 flex justify-between items-end">
+                <span class="text-xs font-serif uppercase tracking-widest text-plateado-oscuro">Total a Pagar</span>
+                <span class="text-2xl font-serif font-bold text-dorado">${{ '%.0f'|format(pedido.monto_total) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Formulario de Pago -->
+    <div class="lg:col-span-2">
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded p-6 md:p-8 shadow-2xl">
+            
+            <!-- Contenedor para alertas de error -->
+            <div id="alerta-pago" class="hidden mb-4 p-4 rounded text-sm text-red-700 bg-red-100 border border-red-400"></div>
+
+            <!-- AQUÍ PASAMOS EL ID AL JS USANDO data-pedido-id -->
+            <form id="form-pago" class="space-y-6" data-pedido-id="{{ pedido.id }}">
+                
+                <!-- Selector de Medio de Pago -->
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Medio de pago</label>
+                    <select name="tipo_pago" id="tipo_pago" onchange="mostrarCampos()" 
+                            class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm font-light transition-all">
+                        <option value="TARJETA_CREDITO">Tarjeta de Crédito</option>
+                        <option value="TARJETA_DEBITO">Tarjeta Débito</option>
+                        <option value="PSE">PSE (Transferencia en línea)</option>
+                        <option value="TRANSFERENCIA">Transferencia Bancaria Directa</option>
+                    </select>
+                </div>
+
+                <!-- Campos Tarjetas -->
+                <div id="campos_tarjeta" class="space-y-4 pt-2">
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Número de tarjeta</label>
+                        <input type="text" name="numero_tarjeta" placeholder="4111 1111 1111 1111" maxlength="19"
+                               class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro placeholder-plateado-oscuro text-sm font-light transition-all tracking-widest">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Expiración (MM/AA)</label>
+                            <input type="text" name="fecha_expiracion" placeholder="12/28"
+                                   class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro placeholder-plateado-oscuro text-sm font-light transition-all text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">CVV / CVC</label>
+                            <input type="text" name="cvv" placeholder="123" maxlength="4"
+                                   class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro placeholder-plateado-oscuro text-sm font-light transition-all text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campos PSE -->
+                <div id="campos_pse" style="display:none;" class="pt-2">
+                    <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Entidad Bancaria</label>
+                    <input type="text" name="banco" placeholder="Ej: Bancolombia, Davivienda, Nequi"
+                           class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro placeholder-plateado-oscuro text-sm font-light transition-all">
+                </div>
+
+                <!-- Campos Transferencia -->
+                <div id="campos_transferencia" style="display:none;" class="space-y-4 pt-2">
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Banco de origen</label>
+                        <input type="text" name="banco_t" placeholder="Ej: Banco de Bogotá"
+                               class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro placeholder-plateado-oscuro text-sm font-light transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Número de comprobante / Referencia</label>
+                        <input type="text" name="numero_referencia" placeholder="Ej: 12345678"
+                               class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro placeholder-plateado-oscuro text-sm font-light transition-all">
+                    </div>
+                </div>
+
+                <!-- Botón de Pago -->
+                <button type="submit" id="btn-pagar" class="w-full bg-dorado hover:bg-dorado-brillante text-fondo-puro font-serif font-bold uppercase tracking-widest text-xs py-4 rounded transition-colors shadow-xl mt-4 flex justify-center items-center">
+                    <span id="btn-texto">Procesar Pago — ${{ '%.0f'|format(pedido.monto_total) }}</span>
+                    <span id="btn-spinner" class="hidden ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-fondo-puro"></span>
+                </button>
+            </form>
+
+            <!-- Nota de Entornos de Prueba -->
+            <div class="mt-6 pt-4 border-t border-fondo-borde/50 text-center">
+                <p class="text-[10px] text-plateado-oscuro font-light uppercase tracking-wider leading-relaxed">
+                    🧪 <span class="text-dorado">Modo Simulación:</span> Tarjeta terminada en <span class="text-plateado font-mono">0000</span> simula fondos insuficientes, y terminada en <span class="text-plateado font-mono">9999</span> simula tiempo de espera agotado.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+function mostrarCampos() {
+    const tipo = document.getElementById('tipo_pago').value;
+    document.getElementById('campos_tarjeta').style.display = (tipo.startsWith('TARJETA')) ? 'block' : 'none';
+    document.getElementById('campos_pse').style.display = (tipo === 'PSE') ? 'block' : 'none';
+    document.getElementById('campos_transferencia').style.display = (tipo === 'TRANSFERENCIA') ? 'block' : 'none';
+}
+// Inicializar campos al cargar
+mostrarCampos();
+
+document.getElementById('form-pago').addEventListener('submit', function(e) {
+    e.preventDefault(); // Evitamos que la página se recargue
+
+    const formElement = document.getElementById('form-pago');
+    const btn = document.getElementById('btn-pagar');
+    const spinner = document.getElementById('btn-spinner');
+    const alerta = document.getElementById('alerta-pago');
+    
+    // Obtenemos el ID del pedido desde el HTML de forma limpia
+    const pedidoId = formElement.dataset.pedidoId;
+    
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    alerta.classList.add('hidden');
+
+    const tipoPago = document.getElementById('tipo_pago').value;
+    
+    const payload = {
+        pedido_id: parseInt(pedidoId),
+        tipo_pago: tipoPago,
+        datos_tarjeta: {
+            numero_tarjeta: document.querySelector('input[name="numero_tarjeta"]').value,
+            fecha_expiracion: document.querySelector('input[name="fecha_expiracion"]').value,
+            cvv: document.querySelector('input[name="cvv"]').value
+        },
+        banco: tipoPago === 'TRANSFERENCIA' ? document.querySelector('input[name="banco_t"]').value : document.querySelector('input[name="banco"]').value,
+        numero_referencia: document.querySelector('input[name="numero_referencia"]').value
+    };
+
+    fetch('/api/pasarela/pagar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.estatus === 'APROBADO') {
+            window.location.href = `/cliente/pedido/${pedidoId}/recibo`;
+        } else {
+            alerta.innerText = data.mensaje || "Error al procesar el pago.";
+            alerta.classList.remove('hidden');
+            btn.disabled = false;
+            spinner.classList.add('hidden');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alerta.innerText = "Hubo un error de red al intentar procesar el pago.";
+        alerta.classList.remove('hidden');
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+    });
+});
+</script>
+{% endblock %}

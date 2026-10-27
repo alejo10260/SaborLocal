@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block title %}Mi menú — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Encabezado de la Vista -->
+<div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-fondo-borde pb-6">
+    <div>
+        <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Administración Gastronómica</span>
+        <h1 class="text-3xl md:text-4xl font-serif text-dorado uppercase tracking-wide">Perfil y Menú Culinario</h1>
+    </div>
+    {% if restaurante and restaurante.estado == 'PUBLICADO' %}
+        <a href="{{ url_for('panel_chef') }}" class="border border-plateado-oscuro text-plateado hover:border-dorado hover:text-dorado font-serif uppercase tracking-widest text-xs px-5 py-2.5 rounded transition-colors self-start md:self-auto">
+            &larr; Volver a Comandas
+        </a>
+    {% endif %}
+</div>
+
+{% if not restaurante %}
+    <!-- Estado: Sin restaurante asociado -->
+    <div class="text-center py-20 bg-fondo-tarjeta border border-fondo-borde rounded-lg shadow-2xl">
+        <span class="text-4xl mb-4 block text-dorado-oscuro">👨‍🍳</span>
+        <p class="text-plateado-oscuro font-light tracking-widest uppercase text-sm">
+            No tiene un restaurante asociado a su cuenta de chef.
+        </p>
+    </div>
+
+{% elif restaurante.estado != 'PUBLICADO' %}
+{# ---------- PRIMERA CONFIGURACIÓN: PERFIL + PLATILLOS BORRADOR Y PUBLICAR ---------- #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- Columna Izquierda: Perfil inicial y resumen del borrador -->
+    <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 md:p-8 shadow-2xl flex flex-col justify-between">
+        <div>
+            <div class="mb-6 border-b border-fondo-borde pb-4">
+                <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Paso 1 de 2</span>
+                <h2 class="text-xl font-serif text-plateado-claro tracking-wide">Configurar Perfil y Publicar</h2>
+                <p class="text-xs font-light text-plateado-oscuro mt-1">Complete los datos de su establecimiento y publique para recibir clientes.</p>
+            </div>
+
+            <form method="post" id="form-publicar" class="space-y-5">
+                <input type="hidden" name="accion" value="publicar">
+                
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Nombre del restaurante</label>
+                    <input type="text" name="nombre_restaurante" value="{{ restaurante.nombre_restaurante }}" required
+                           class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm font-light transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Dirección física</label>
+                    <input type="text" name="direccion" value="{{ restaurante.direccion }}" required
+                           class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm font-light transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Descripción o propuesta gastronómica</label>
+                    <textarea name="descripcion" rows="2"
+                              class="w-full px-4 py-3 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm font-light transition-all resize-none">{{ restaurante.descripcion or '' }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Hora apertura</label>
+                        <input type="time" name="hora_apertura" value="{{ restaurante.hora_apertura or '08:00' }}" required
+                               class="w-full px-3 py-2.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Hora cierre</label>
+                        <input type="time" name="hora_cierre" value="{{ restaurante.hora_cierre or '20:00' }}" required
+                               class="w-full px-3 py-2.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm text-center">
+                    </div>
+                </div>
+
+                <!-- Resumen de platillos borrador -->
+                <div class="pt-4 border-t border-fondo-borde">
+                    <h3 class="text-xs font-serif uppercase tracking-widest text-plateado-claro mb-3">
+                        Platillos preparados (<span class="text-dorado">{{ borrador|length }}</span>)
+                    </h3>
+                    
+                    {% if not borrador %}
+                        <p class="text-xs text-amber-500/80 font-light italic">
+                            ⚠️ Debe agregar al menos un platillo en el panel continuo para poder publicar.
+                        </p>
+                    {% else %}
+                        <div class="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            {% for pl in borrador %}
+                            <div class="flex justify-between items-center bg-fondo-puro border border-fondo-borde p-2.5 rounded text-xs">
+                                <span class="text-plateado font-light">{{ pl.nombre }}</span>
+                                <span class="text-dorado font-serif">${{ '%.0f'|format(pl.precio) }} <span class="text-[10px] text-plateado-oscuro">(Stock: {{ pl.inventario }})</span></span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" {% if not borrador %}disabled{% endif %}
+                        class="w-full bg-dorado hover:bg-dorado-brillante disabled:bg-fondo-puro disabled:border disabled:border-fondo-borde disabled:text-plateado-oscuro text-fondo-puro font-serif font-bold uppercase tracking-widest text-xs py-3.5 rounded transition-colors shadow-lg mt-4">
+                    Guardar y Publicar Restaurante
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Agregar platillos al borrador -->
+    <div class="space-y-6">
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 md:p-8 shadow-2xl">
+            <div class="mb-6 border-b border-fondo-borde pb-4">
+                <span class="text-[10px] font-serif uppercase tracking-widest text-dorado block mb-1">Paso 2 de 2</span>
+                <h2 class="text-xl font-serif text-plateado-claro tracking-wide">Agregar Platillo al Borrador</h2>
+            </div>
+
+            <form method="post" class="space-y-4">
+                <input type="hidden" name="accion" value="agregar_platillo">
+                
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Nombre del platillo</label>
+                    <input type="text" name="nombre_platillo" required placeholder="Ej: Solomillo en salsa de trufas"
+                           class="w-full px-4 py-2.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm font-light placeholder-plateado-oscuro">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-serif uppercase tracking-widest text-dorado mb-2">Descripción</label>
+                    <input type="text" name="descripcion_platillo" placeholder="Ingredientes clave, preparación..."
+                           class="w-full px-4 py-2.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm font-light placeholder-plateado-oscuro">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Precio ($)</label>
+                        <input type="number" name="precio" min="1" step="1" required placeholder="45000"
+                               class="w-full px-3 py-2.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-2">Stock inicial</label>
+                        <input type="number" name="inventario" min="0" step="1" required placeholder="10"
+                               class="w-full px-3 py-2.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado focus:border-dorado outline-none text-plateado-claro text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 font-serif font-bold uppercase tracking-widest text-xs py-3 rounded transition-colors shadow">
+                    + Agregar a la lista
+                </button>
+            </form>
+
+            {% if borrador %}
+                <div class="mt-8 pt-6 border-t border-fondo-borde">
+                    <h3 class="text-xs font-serif uppercase tracking-widest text-plateado-oscuro mb-3">Quitar de la lista previa</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for pl in borrador %}
+                        <form method="post" class="inline">
+                            <input type="hidden" name="accion" value="quitar_platillo">
+                            <input type="hidden" name="indice" value="{{ loop.index0 }}">
+                            <button type="submit" class="border border-red-900/50 text-red-400 hover:bg-red-950 text-[10px] uppercase font-serif px-3 py-1.5 rounded transition-colors">
+                                ✕ Quitar "{{ pl.nombre }}"
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% else %}
+{# ---------- RESTAURANTE PUBLICADO: EDITAR PERFIL Y GESTIONAR EL MENÚ ---------- #}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Columna Izquierda: Editar Perfil -->
+    <div class="lg:col-span-1">
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 shadow-2xl sticky top-28">
+            <h3 class="text-xs font-serif uppercase tracking-widest text-dorado mb-4 border-b border-fondo-borde pb-3">
+                Perfil del Establecimiento
+            </h3>
+
+            <form method="post" class="space-y-4">
+                <input type="hidden" name="accion" value="actualizar_perfil">
+                
+                <div>
+                    <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1.5">Nombre del restaurante</label>
+                    <input type="text" name="nombre_restaurante" value="{{ restaurante.nombre_restaurante }}" required
+                           class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1.5">Dirección</label>
+                    <input type="text" name="direccion" value="{{ restaurante.direccion }}" required
+                           class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1.5">Descripción</label>
+                    <textarea name="descripcion" rows="2"
+                              class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light resize-none">{{ restaurante.descripcion or '' }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1">Apertura</label>
+                        <input type="time" name="hora_apertura" value="{{ restaurante.hora_apertura or '08:00' }}" required
+                               class="w-full px-2 py-1.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs text-center">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1">Cierre</label>
+                        <input type="time" name="hora_cierre" value="{{ restaurante.hora_cierre or '20:00' }}" required
+                               class="w-full px-2 py-1.5 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs text-center">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full border border-dorado text-dorado hover:bg-dorado hover:text-fondo-puro font-serif uppercase tracking-widest text-[11px] py-2.5 rounded transition-colors font-bold mt-2">
+                    Actualizar Perfil
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Columna Derecha (2 cols): Menú Publicado y Agregar Platillos -->
+    <div class="lg:col-span-2 space-y-8">
+        
+        <!-- Tarjeta: Menú Publicado -->
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 shadow-2xl">
+            <h3 class="text-xs font-serif uppercase tracking-widest text-dorado mb-4 border-b border-fondo-borde pb-3">
+                Menú Activo en Plataforma
+            </h3>
+
+            {% if not menu_publicado %}
+                <p class="text-xs text-plateado-oscuro font-light uppercase tracking-widest py-4 text-center">Aún no tiene platillos activos en su carta.</p>
+            {% else %}
+                <div class="space-y-4">
+                    {% for p in menu_publicado %}
+                    <div class="bg-fondo-puro border border-fondo-borde p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-dorado/30 transition-all">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="text-sm font-serif text-plateado-claro font-medium">{{ p.nombre }}</h4>
+                                <span class="text-dorado font-serif font-bold text-sm">&mdash; ${{ '%.0f'|format(p.precio) }}</span>
+                            </div>
+                            <span class="text-[10px] text-plateado-oscuro uppercase tracking-widest block mt-0.5">Stock disponible: {{ p.inventario }}</span>
+                            {% if p.descripcion %}
+                                <p class="text-xs text-plateado font-light mt-1">{{ p.descripcion }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a href="{{ url_for('chef_editar_producto', producto_id=p.id) }}" 
+                               class="border border-plateado-oscuro text-plateado hover:border-dorado hover:text-dorado text-[10px] uppercase font-serif tracking-widest px-3 py-1.5 rounded transition-colors">
+                                Editar
+                            </a>
+                            <form method="post" class="inline">
+                                <input type="hidden" name="accion" value="quitar_publicado">
+                                <input type="hidden" name="producto_id" value="{{ p.id }}">
+                                <button type="submit" class="border border-red-900/50 text-red-400 hover:bg-red-950 text-[10px] uppercase font-serif tracking-widest px-3 py-1.5 rounded transition-colors">
+                                    Quitar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tarjeta: Agregar Platillo Nuevo a la Carta -->
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded-lg p-6 shadow-2xl">
+            <h3 class="text-xs font-serif uppercase tracking-widest text-dorado mb-4 border-b border-fondo-borde pb-3">
+                Agregar Platillo al Menú Activo
+            </h3>
+
+            <form method="post" class="space-y-4">
+                <input type="hidden" name="accion" value="agregar_platillo_publicado">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1">Nombre</label>
+                        <input type="text" name="nombre_platillo" required placeholder="Ej: Risotto de setas silvestres"
+                               class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1">Descripción</label>
+                        <input type="text" name="descripcion_platillo" placeholder="Detalles de preparación..."
+                               class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1">Precio ($)</label>
+                        <input type="number" name="precio" min="1" step="1" required placeholder="38000"
+                               class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-serif uppercase tracking-widest text-plateado-oscuro mb-1">Inventario</label>
+                        <input type="number" name="inventario" min="0" step="1" required placeholder="15"
+                               class="w-full px-3 py-2 bg-fondo-puro border border-fondo-borde rounded focus:ring-1 focus:ring-dorado outline-none text-plateado-claro text-xs font-light">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-green-950 hover:bg-green-900 border border-green-700 text-green-300 font-serif font-bold uppercase tracking-widest text-xs py-3 rounded transition-colors shadow">
+                    + Agregar al menú publicado
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endif %}
+{% endblock %}

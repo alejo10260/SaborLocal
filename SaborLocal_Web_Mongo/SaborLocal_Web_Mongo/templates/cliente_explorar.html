@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Explorar — SaborLocal{% endblock %}
+
+{% block content %}
+<!-- Encabezado Elegante -->
+<div class="mb-10">
+    <h1 class="text-3xl font-serif text-dorado uppercase tracking-widest mb-2">Selección Exclusiva</h1>
+    <p class="text-plateado text-sm font-light border-b border-fondo-borde pb-6">
+        Descubra los establecimientos culinarios más destacados de la ciudad.
+    </p>
+</div>
+
+<!-- Estado Vacío -->
+{% if not restaurantes %}
+    <div class="text-center py-20 bg-fondo-tarjeta border border-fondo-borde rounded shadow-2xl">
+        <span class="text-4xl mb-4 block text-dorado-oscuro">🍽️</span>
+        <p class="text-plateado-oscuro font-light tracking-widest uppercase text-sm">
+            Aún no hay restaurantes disponibles en nuestra selección.
+        </p>
+    </div>
+{% else %}
+    <!-- Cuadrícula de Restaurantes -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for r in restaurantes %}
+        <div class="bg-fondo-tarjeta border border-fondo-borde rounded p-6 hover:border-dorado/50 transition-all shadow-2xl flex flex-col h-full group transform hover:-translate-y-1">
+            
+            <div class="flex-grow">
+                <!-- Nombre y Dirección -->
+                <h3 class="text-xl font-serif text-plateado-claro tracking-wide mb-2 group-hover:text-dorado transition-colors">
+                    {{ r.nombre_restaurante }}
+                </h3>
+                <p class="text-[11px] text-plateado-oscuro uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <span class="text-dorado">📍</span> {{ r.direccion }}
+                </p>
+                
+                <!-- Descripción -->
+                <p class="text-sm font-light text-plateado leading-relaxed mb-6 line-clamp-3">
+                    {{ r.descripcion or 'Una experiencia gastronómica única e inolvidable con ingredientes de la más alta calidad.' }}
+                </p>
+            </div>
+            
+            <!-- Estado y Horario -->
+            <div class="border-t border-fondo-borde pt-5 mb-6">
+                <div class="flex items-center justify-between">
+                    <!-- Insignia de Estado -->
+                    {% if r.en_horario %}
+                        <span class="px-3 py-1 bg-green-950 border border-green-900 text-green-400 text-[9px] uppercase tracking-widest rounded-sm font-bold">
+                            Disponible
+                        </span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-red-950 border border-red-900 text-red-400 text-[9px] uppercase tracking-widest rounded-sm font-bold">
+                            Cerrado
+                        </span>
+                    {% endif %}
+                    
+                    <!-- Horario -->
+                    {% if r.hora_apertura %}
+                        <span class="text-[11px] text-plateado-oscuro tracking-wider">
+                            {{ r.hora_apertura }} - {{ r.hora_cierre }}
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Botón de Acción -->
+            <a href="{{ url_for('cliente_restaurante', restaurante_id=r.id) }}" 
+               class="block w-full text-center border border-dorado text-dorado hover:bg-dorado hover:text-fondo-puro py-2.5 rounded font-serif uppercase tracking-widest text-xs transition-colors">
+                Ver menú
+            </a>
+            
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
